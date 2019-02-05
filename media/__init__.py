@@ -988,7 +988,7 @@ class Media:
 
 	def count_tags(self, filter={}):
 		statement = self.prepare_tags_search_statement(filter)
-		statement = statement.with_only_columns([func.count(self.tags.c.media_id)])
+		statement = statement.with_only_columns([func.count(self.tags.c.medium_id)])
 		return self.connection.execute(statement).fetchone()[0]
 
 	def search_tags(

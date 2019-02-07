@@ -6,8 +6,9 @@ from enum import Enum
 from datetime import datetime, timezone
 import random
 
-from sqlalchemy import Table, Column, PrimaryKeyConstraint, LargeBinary
-from sqlalchemy import Integer, Float, String, MetaData, ForeignKey, distinct
+from sqlalchemy import Table, Column, PrimaryKeyConstraint, Binary as sqla_binary
+from sqlalchemy import Integer, Float, String, MetaData, distinct
+from sqlalchemy.dialects.mysql import VARBINARY as mysql_binary
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func, and_, or_
 
@@ -215,26 +216,26 @@ class Media:
 
 		default_bytes = 0b0 * 16
 
+		if 'mysql' == self.engine_session.bind.dialect.name:
+			Binary = mysql_binary
+		else:
+			Binary = sqla_binary
+
 		# media tables
 		self.media = Table(
 			self.db_prefix + 'media',
 			metadata,
-			Column(
-				'id',
-				LargeBinary(16),
-				primary_key=True,
-				default=default_bytes,
-			),
+			Column('id', Binary(16), default=default_bytes),
 			Column('upload_time', Integer, default=0),
 			Column('creation_time', Integer, default=0),
 			Column('touch_time', Integer, default=0),
 			Column(
 				'uploader_remote_origin',
-				LargeBinary(16),
+				Binary(16),
 				default=ip_address(default_bytes).packed,
 			),
-			Column('uploader_id', LargeBinary(16), default=default_bytes),
-			Column('owner_id', LargeBinary(16), default=default_bytes),
+			Column('uploader_id', Binary(16), default=default_bytes),
+			Column('owner_id', Binary(16), default=default_bytes),
 			Column('status', Integer, default=int(MediumStatus.ALLOWED)),
 			Column('protection', Integer, default=int(MediumProtection.NONE)),
 			Column(
@@ -252,13 +253,14 @@ class Media:
 			Column('data5', Integer, default=0),
 			Column('data6', Integer, default=0),
 			Column('focus', Float, default=0.5),
+			PrimaryKeyConstraint('id'),
 		)
 
 		# tags tables
 		self.tags = Table(
 			self.db_prefix + 'tags',
 			metadata,
-			Column('medium_id', None, ForeignKey(self.db_prefix + 'media.id')),
+			Column('medium_id', Binary(16), default=default_bytes),
 			Column('tag', String(self.tag_length), default=''),
 			PrimaryKeyConstraint('medium_id', 'tag'),
 		)
@@ -267,31 +269,28 @@ class Media:
 		self.likes = Table(
 			self.db_prefix + 'likes',
 			metadata,
-			Column(
-				'id',
-				LargeBinary(16),
-				primary_key=True,
-				default=default_bytes,
-			),
+			Column('id', Binary(16), default=default_bytes),
 			Column('creation_time', Integer, default=0),
-			Column('medium_id', None, ForeignKey(self.db_prefix + 'media.id')),
-			Column('user_id', LargeBinary(16), default=default_bytes),
+			Column('medium_id', Binary(16), default=default_bytes),
+			Column('user_id', Binary(16), default=default_bytes),
+			PrimaryKeyConstraint('id'),
 		)
 
 		self.connection = self.engine.connect()
 
 		if install:
-			table_exists = self.engine.dialect.has_table(
-				self.engine,
-				self.db_prefix + 'media'
-			)
-			if not table_exists:
-				metadata.create_all(self.engine)
+			for table in [
+					self.media,
+					self.tags,
+					self.likes,
+				]:
+				table.create(bind=self.engine, checkfirst=True)
 
 	def uninstall(self):
 		for table in [
 				self.media,
 				self.tags,
+				self.likes,
 			]:
 			table.drop(self.engine)
 

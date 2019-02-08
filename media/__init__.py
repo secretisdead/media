@@ -209,7 +209,7 @@ class Media:
 
 		self.db_prefix = db_prefix
 
-		self.tag_length = 16
+		self.tag_length = 64
 		self.mime_length = 32
 
 		metadata = MetaData()

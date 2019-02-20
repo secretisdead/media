@@ -203,7 +203,7 @@ class Like:
 		self.user = None
 
 class Media:
-	def __init__(self, engine, db_prefix='', install=False):
+	def __init__(self, engine, db_prefix='', install=False, connection=None):
 		self.engine = engine
 		self.engine_session = sessionmaker(bind=self.engine)()
 
@@ -276,7 +276,10 @@ class Media:
 			PrimaryKeyConstraint('id'),
 		)
 
-		self.connection = self.engine.connect()
+		if connection:
+			self.connection = connection
+		else:
+			self.connection = self.engine.connect()
 
 		if install:
 			for table in [

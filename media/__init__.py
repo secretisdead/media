@@ -1263,6 +1263,21 @@ class Media:
 		)
 		conditions += id_filter(filter, 'medium_ids', self.likes.c.medium_id)
 		conditions += id_filter(filter, 'user_ids', self.likes.c.user_id)
+		if 'owner_ids' in filter:
+			if list is not type(filter['owner_ids']):
+				filter['owner_ids'] = [filter['owner_ids']]
+			media_subquery_conditions = []
+			for owner_id in filter['owner_ids']:
+				owner_id_bytes = get_id_bytes(owner_id)
+				media_subquery_conditions.append(
+					self.media.c.owner_id == owner_id_bytes
+				)
+			media_subquery = self.engine_session.query(
+				self.media.c.id
+			).filter(
+				or_(*media_subquery_conditions)
+			).subquery()
+			conditions.append(self.likes.c.medium_id.in_(media_subquery))
 
 		statement = self.likes.select()
 		if conditions:

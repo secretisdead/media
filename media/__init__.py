@@ -1289,6 +1289,38 @@ class Media:
 		statement = statement.with_only_columns([func.count(self.likes.c.id)])
 		return self.connection.execute(statement).fetchone()[0]
 
+	def count_unique_likes(self, user_id, owner_ids=[]):
+		user_id_bytes = get_id_bytes(user_id)
+		if not owner_ids:
+			return self.engine_session.query(
+					self.likes.c.medium_id
+				).filter(
+					self.likes.c.user_id == user_id_bytes
+				).group_by(self.likes.c.medium_id).count()
+		if list is not type(owner_ids):
+			owner_ids = [owner_ids]
+
+		media_subquery_conditions = []
+		for owner_id in owner_ids:
+			owner_id_bytes = get_id_bytes(owner_id)
+			media_subquery_conditions.append(
+				self.media.c.owner_id == owner_id_bytes
+			)
+		media_subquery = self.engine_session.query(
+			self.media.c.id
+		).filter(
+			or_(*media_subquery_conditions)
+		).subquery()
+
+		return self.engine_session.query(
+				self.likes.c.medium_id
+			).filter(
+				and_(
+					self.likes.c.user_id == user_id_bytes,
+					self.likes.c.medium_id.in_(media_subquery)
+				)
+			).group_by(self.likes.c.medium_id).count()
+
 	def search_likes(
 			self,
 			filter={},

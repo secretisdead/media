@@ -1055,6 +1055,8 @@ class Media:
 		self.add_tags(medium_ids, tags)
 
 	def add_tags(self, medium_ids, tags):
+		# remove tags to be added first to ensure no duplicates
+		self.remove_tags(medium_ids, tags);
 		if list != type(medium_ids):
 			medium_ids = [medium_ids]
 		if list != type(tags):

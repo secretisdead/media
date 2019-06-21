@@ -509,6 +509,24 @@ class Media:
 				self.likes.c.medium_id, func.count(self.likes.c.id)
 			).group_by(self.likes.c.medium_id).subquery()
 
+		not_liked_by_user_id_bytes = None
+		if 'not_liked_by_user' in filter:
+			try:
+				not_liked_by_user_id, not_liked_by_user_id_bytes = parse_id(
+					filter['not_liked_by_user']
+				)
+			except:
+				pass
+
+		if not_liked_by_user_id_bytes:
+			liked_by_user_subquery = self.engine_session.query(
+				self.likes.c.medium_id
+			).filter(
+				self.likes.c.user_id == not_liked_by_user_id_bytes,
+			).group_by(self.likes.c.medium_id).subquery()
+
+			conditions.append(self.media.c.id.notin_(liked_by_user_subquery))
+
 		statement = self.media.join(
 			like_counts_subquery,
 			like_counts_subquery.c.medium_id == self.media.c.id,

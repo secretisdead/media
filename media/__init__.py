@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import random
 
 from sqlalchemy import Table, Column, PrimaryKeyConstraint, Binary as sqla_binary
-from sqlalchemy import Integer, Float, String, MetaData, distinct
+from sqlalchemy import Integer, Float, String, MetaData, distinct, text
 from sqlalchemy.dialects.mysql import VARBINARY as mysql_binary
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func, and_, or_
@@ -588,7 +588,7 @@ class Media:
 				#pseudo_rand = pseudo_rand[:-3] + ') ' + order
 				pseudo_rand = pseudo_rand[:-3] + ')'
 				random.seed()
-				statement = statement.order_by(pseudo_rand)
+				statement = statement.order_by(text(pseudo_rand))
 			elif dialect in ['postgresql']:
 				statement = statement.order_by(func.random(seed))
 			#TODO seeded pseudo random in oracle (and others?)
@@ -771,7 +771,7 @@ class Media:
 					)
 				pseudo_rand = pseudo_rand[:-3] + ') ' + order
 				random.seed()
-				statement = statement.order_by(pseudo_rand)
+				statement = statement.order_by(text(pseudo_rand))
 			elif dialect in ['postgresql']:
 				statement = statement.order_by(func.random(seed))
 			#TODO seeded pseudo random in oracle (and others?)

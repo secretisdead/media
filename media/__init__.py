@@ -6,7 +6,7 @@ from enum import Enum
 from datetime import datetime, timezone
 import random
 
-from sqlalchemy import Table, Column, PrimaryKeyConstraint, Binary as sqla_binary
+from sqlalchemy import Table, Column, PrimaryKeyConstraint, LargeBinary as sqla_binary
 from sqlalchemy import Integer, Float, String, MetaData, distinct, text
 from sqlalchemy.dialects.mysql import VARBINARY as mysql_binary
 from sqlalchemy.orm import sessionmaker
